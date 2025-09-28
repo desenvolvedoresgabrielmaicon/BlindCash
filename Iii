@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistente Financeiro Interativo - Offline</title>
+
+    <style>
+        :root {
+            --cor-primaria: #4f46e5;
+            --cor-secundaria: #34d399;
+            --cor-fundo: #f3f4f6;
+            --cor-texto: #1f2937;
+            --cor-borda: #e5e7eb;
+            --cor-alerta: #ef4444;
+            --cor-sucesso: #10b981;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--cor-fundo);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 900px;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--cor-primaria);
+            margin-bottom: 25px;
+            font-weight: 700;
+        }
+        
+        /* FILTRO DE PERÍODO */
+        .filtro-periodo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding: 10px;
+            border: 1px solid var(--cor-borda);
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        .filtro-periodo label {
+            font-weight: 600;
+            color: var(--cor-texto);
+        }
+        .filtro-periodo select {
+            padding: 8px;
+            border: 1px solid var(--cor-borda);
+            border-radius: 6px;
+        }
+
+        /* Saldo Geral */
+        .saldo-geral {
+            text-align: center;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+        }
+        .saldo-geral h2 {
+            margin-bottom: 0;
+        }
+
+        #saldo, #balanco-mensal {
+            font-size: 1.8em;
+            font-weight: 700;
+            transition: color 0.3s ease;
+            display: block;
+            margin-top: 5px;
+        }
+
+        #saldo {
+            font-size: 2.5em; /* Saldo Geral maior */
+        }
+        
+        .saldo-positivo {
+            color: var(--cor-sucesso); /* Verde */
+        }
+
+        .saldo-negativo {
+            color: var(--cor-alerta); /* Vermelho */
+        }
+
+        /* Formulário de Transação */
+        .transacao-form h2 {
+            color: var(--cor-primaria);
+            border-bottom: 2px solid var(--cor-borda);
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        
+        .form-campos {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .form-campos input,
+        .form-campos select {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid var(--cor-borda);
+            border-radius: 6px;
+            box-sizing: border-box;
+            min-width: 120px;
+        }
+
+        .transacao-form button {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--cor-primaria);
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            transition: background-color 0.3s ease;
+        }
+
+        .transacao-form button:hover {
+            background-color: #6366f1;
+        }
+        
+        /* Estilo para os botões de Importar/Exportar */
+        .ferramentas-dados button {
+            padding: 10px;
+            color: white;
+            font-weight: 500;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+        }
+        .ferramentas-dados button:nth-child(1) { /* Exportar */
+            background-color: #6c757d;
+        }
+        .ferramentas-dados button:nth-child(3) { /* Importar */
+            background-color: #0d6efd;
+        }
+
+        /* Seção de Gráficos e Resumo */
+        .dashboard {
+            display: flex;
+            gap: 20px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .graficos-container, .resumo-categorias {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .graficos-container {
+            flex: 2;
+            min-width: 300px;
+        }
+        
+        .resumo-categorias {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .graficos-container h2, .resumo-categorias h2 {
+            color: var(--cor-texto);
+            font-weight: 600;
+            border-bottom: 1px solid var(--cor-borda);
+            padding-bottom: 10px;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        /* Gráfico de Barras e Pizza */
+        #graficoDespesasBarras, #graficoDespesasPizza {
+            max-height: 350px;
+            width: 100% !important; 
+        }
+
+        /* Lista de Resumo */
+        #lista-resumo-categorias {
+            list-style: none;
+            padding: 0;
+        }
+
+        #lista-resumo-categorias li {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px dotted var(--cor-borda);
+            font-weight: 500;
+            color: var(--cor-texto);
+        }
+
+        #lista-resumo-categorias li:last-child {
+            border-bottom: none;
+        }
+        
+        .valor-resumo {
+            color: var(--cor-alerta);
+            font-weight: 600;
+        }
+
+        /* Histórico de Transações */
+        .historico {
+            margin-top: 30px;
+        }
+        .historico h2 {
+            color: var(--cor-texto);
+            border-bottom: 2px solid var(--cor-borda);
+            padding-bottom: 10px;
+        }
+
+        #lista-transacoes {
+            list-style: none;
+            padding: 0;
+        }
+
+        #lista-transacoes li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 10px;
+            border-bottom: 1px solid var(--cor-borda);
+            font-size: 1em;
+            transition: background-color 0.2s;
+            background-color: #ffffff;
+            border-radius: 4px;
+            margin-bottom: 5px;
+        }
+
+        #lista-transacoes li:hover {
+            background-color: #f9fafb;
+        }
+
+        .valor-receita {
+            color: var(--cor-sucesso);
+            font-weight: 600;
+        }
+
+        .valor-despesa {
+            color: var(--cor-alerta);
+            font-weight: 600;
+        }
+        
+        .transacao-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: #6b7280;
+        }
+        .transacao-data {
+            font-size: 0.9em;
+            color: #9ca3af;
+        }
+        
+        .excluir-btn {
+            background: none;
+            border: none;
+            color: var(--cor-alerta);
+            cursor: pointer;
+            font-size: 1.2em;
+            margin-left: 10px;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .excluir-btn:hover {
+            opacity: 1;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                flex-direction: column;
+            }
+            .grafico-pizza, .resumo-categorias {
+                width: 100%;
+                min-width: auto;
+            }
+            .saldo-geral h2 {
+                font-size: 1.2em;
+            }
+            #saldo {
+                font-size: 2em;
+            }
+            .ferramentas-dados {
+                flex-direction: column;
+            }
+            .ferramentas-dados button {
+                width: 100% !important;
+            }
+        }
+    </style>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Assistente Financeiro Interativo (Modo Offline)</h1>
+
+        <div class="filtro-periodo">
+            <label for="filtroMes">Visualizar Período:</label>
+            <select id="filtroMes" onchange="atualizarFiltroPeriodo()"></select>
+            <select id="filtroAno" onchange="atualizarFiltroPeriodo()"></select>
+        </div>
+
+        <div class="saldo-geral">
+            <h2>Saldo Geral Acumulado: <span id="saldo">R$ 0.00</span></h2>
+            <h3 style="margin-top: 10px;">Balanço do Mês (<span id="mes-balanco-label"></span>): <span id="balanco-mensal">R$ 0.00</span></h3>
+        </div>
+
+        <div class="transacao-form">
+            <h2>Nova Transação</h2>
+            <div class="form-campos">
+                <input type="date" id="data" required>
+                <input type="text" id="descricao" placeholder="Descrição" required>
+                <input type="number" id="valor" placeholder="Valor" required>
+                
+                <select id="tipo" onchange="alternarCampoCategoria()">
+                    <option value="receita">Receita (+)</option>
+                    <option value="despesa">Despesa (-)</option>
+                </select>
+
+                <select id="categoria">
+                    <option value="" disabled selected>Categoria (Despesa)</option>
+                    <option value="moradia">Moradia/Aluguel</option>
+                    <option value="alimentacao">Alimentação</option>
+                    <option value="transporte">Transporte</option>
+                    <option value="lazer">Lazer</option>
+                    <option value="saude">Saúde</option>
+                    <option value="investimentos">Investimentos (Saída de Capital)</option>
+                    <option value="outros">Outros</option>
+                </select>
+            </div>
+            
+            <button onclick="adicionarTransacao()">Adicionar Transação</button>
+        </div>
+
+        <div class="ferramentas-dados" style="margin-top: 15px; display: flex; gap: 10px; justify-content: space-between;">
+            <button onclick="exportarDados()" style="width: 49%;">Exportar Dados (Backup)</button>
+            <input type="file" id="importarArquivo" accept=".json" style="display: none;" onchange="importarDados(event)">
+            <button onclick="document.getElementById('importarArquivo').click()" style="width: 49%;">Importar Dados</button>
+        </div>
+        
+        <div class="dashboard">
+            <div class="graficos-container">
+                <h2>Análise Gráfica Mensal</h2>
+                <canvas id="graficoDespesasBarras"></canvas>
+                <p id="sem-dados-barras" style="text-align: center; font-style: italic; display: none; margin-top: 20px;">Adicione transações no período selecionado para ver o gráfico.</p>
+                <hr style="margin: 20px 0; border-color: var(--cor-borda);">
+                <canvas id="graficoDespesasPizza"></canvas>
+                <p id="sem-dados-pizza" style="text-align: center; font-style: italic; display: none; margin-top: 20px;">Adicione despesas no período selecionado para ver o gráfico de distribuição.</p>
+            </div>
+            
+            <div class="resumo-categorias">
+                <h2>Resumo de Despesas</h2>
+                <ul id="lista-resumo-categorias">
+                    <li>Nenhuma despesa no período.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="historico">
+            <div class="historico-header">
+                <h2>Histórico de Transações do Mês</h2>
+                <div class="filtros">
+                    <button onclick="filtrarTransacoes('todos')">Todos</button>
+                    <button onclick="filtrarTransacoes('receita')">Receitas</button>
+                    <button onclick="filtrarTransacoes('despesa')">Despesas</button>
+                </div>
+            </div>
+            
+            <ul id="lista-transacoes">
+                </ul>
+            <p id="sem-transacoes" style="text-align: center; display: none;">Nenhuma transação encontrada no período selecionado.</p>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'assistenteFinanceiroTransacoesV3';
+        const MESES_NOMES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+        const CORES_CATEGORIAS = {
+            moradia: '#36A2EB', 
+            alimentacao: '#FF6384', 
+            transporte: '#FF9F40', 
+            lazer: '#9966FF', 
+            saude: '#4BC0C0',
+            investimentos: '#ffc107',
+            outros: '#E7E9ED',
+            receita: '#10b981', // Cor para receitas no gráfico de barras
+            despesa: '#ef4444' // Cor para despesas no gráfico de barras
+        };
+        // Mapeamento para exibição no histórico e formulário
+        const categoriasExibicao = {
+            salario: 'SALÁRIO',
+            investimentos: 'INVESTIMENTOS', // Usado para receitas de investimentos E despesas de investimentos
+            outras: 'OUTRAS RECEITAS',
+            moradia: 'MORADIA', 
+            alimentacao: 'ALIMENTAÇÃO', 
+            transporte: 'TRANSPORTE', 
+            lazer: 'LAZER', 
+            saude: 'SAÚDE',
+            outros: 'OUTROS',
+        };
+        
+        let transacoes = [];
+        let filtroAtual = 'todos';
+        let mesAtual = new Date().getMonth() + 1;
+        let anoAtual = new Date().getFullYear();
+        let graficoPizza; 
+        let graficoBarras;
+
+        // --- INICIALIZAÇÃO e PERSISTÊNCIA ---
+        function carregarTransacoes() {
+            const dadosSalvos = localStorage.getItem(STORAGE_KEY);
+            if (dadosSalvos) {
+                transacoes = JSON.parse(dadosSalvos).map(t => {
+                    // Garante que cada transação tenha uma data e um ID para segurança
+                    return { 
+                        ...t, 
+                        data: t.data || new Date().toISOString().split('T')[0],
+                        id: t.id || Date.now() + Math.random() // Garante ID único
+                    };
+                });
+            }
+            
+            popularFiltrosMesAno();
+            alternarCampoCategoria(); 
+            document.getElementById('data').value = new Date().toISOString().split('T')[0];
+            
+            atualizarInterface();
+        }
+
+        function salvarTransacoes() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(transacoes));
+        }
+
+        document.addEventListener('DOMContentLoaded', carregarTransacoes);
+        
+        // --- UX/VALIDAÇÃO ---
+
+        function alternarCampoCategoria() {
+            const tipo = document.getElementById('tipo').value;
+            const categoriaSelect = document.getElementById('categoria');
+            
+            // Em receitas, a categoria é tratada internamente ou é 'Investimentos'
+            if (tipo === 'receita') {
+                categoriaSelect.style.display = 'none';
+                categoriaSelect.removeAttribute('required');
+            } else {
+                // Em despesas, a categoria é obrigatória
+                categoriaSelect.style.display = 'block';
+                categoriaSelect.setAttribute('required', 'required');
+            }
+            categoriaSelect.value = ''; 
+        }
+
+        function adicionarTransacao() {
+            const descricao = document.getElementById('descricao').value.trim();
+            const valor = parseFloat(document.getElementById('valor').value); 
+            const tipo = document.getElementById('tipo').value;
+            const categoria = document.getElementById('categoria').value;
+            const data = document.getElementById('data').value;
+
+            if (descricao === '' || isNaN(valor) || valor <= 0 || !data || (tipo === 'despesa' && categoria === '')) {
+                alert('Por favor, preencha todos os campos obrigatórios com valores válidos.');
+                return;
+            }
+
+            const novaTransacao = {
+                id: Date.now(), 
+                descricao: descricao,
+                valor: tipo === 'despesa' ? -Math.abs(valor) : Math.abs(valor),
+                tipo: tipo,
+                // Se for despesa, usa a categoria. Se for receita, assume 'outras'
+                categoria: tipo === 'receita' ? (categoria || 'outras') : categoria,
+                data: data 
+            };
+
+            transacoes.push(novaTransacao);
+            
+            salvarTransacoes();
+            // Limpa formulário
+            document.getElementById('descricao').value = '';
+            document.getElementById('valor').value = '';
+            document.getElementById('categoria').value = ''; 
+            document.getElementById('tipo').value = 'receita';
+            document.getElementById('data').value = new Date().toISOString().split('T')[0];
+            alternarCampoCategoria();
+            atualizarInterface(); 
+        }
+
+        function excluirTransacao(id) {
+            if (confirm("Tem certeza que deseja excluir esta transação?")) {
+                transacoes = transacoes.filter(t => t.id !== id);
+                salvarTransacoes();
+                atualizarInterface();
+            }
+        }
+        
+        function filtrarTransacoes(filtro) {
+            filtroAtual = filtro;
+            atualizarInterface();
+        }
+
+        // --- FILTROS DE PERÍODO ---
+        
+        function popularFiltrosMesAno() {
+            const filtroMes = document.getElementById('filtroMes');
+            const filtroAno = document.getElementById('filtroAno');
+            
+            filtroMes.innerHTML = '';
+            filtroAno.innerHTML = '';
+
+            const anosExistentes = transacoes.map(t => new Date(t.data + "T12:00:00").getFullYear());
+            const anosUnicos = [...new Set(anosExistentes)].sort((a, b) => b - a);
+            const anoAtualDefault = new Date().getFullYear();
+
+            if (!anosUnicos.includes(anoAtualDefault)) anosUnicos.unshift(anoAtualDefault);
+
+            // Popula Anos
+            anosUnicos.forEach(ano => {
+                const opt = document.createElement('option');
+                opt.value = ano;
+                opt.textContent = ano;
+                filtroAno.appendChild(opt);
+            });
+            
+            // Popula Meses
+            MESES_NOMES.forEach((nome, index) => {
+                const opt = document.createElement('option');
+                opt.value = index + 1;
+                opt.textContent = nome;
+                filtroMes.appendChild(opt);
+            });
+
+            // Define os valores atuais
+            filtroMes.value = mesAtual;
+            filtroAno.value = anoAtual;
+        }
+
+        function atualizarFiltroPeriodo() {
+            mesAtual = parseInt(document.getElementById('filtroMes').value);
+            anoAtual = parseInt(document.getElementById('filtroAno').value);
+            atualizarInterface();
+        }
+
+        // --- CÁLCULOS PRINCIPAIS ---
+
+        function getTransacoesFiltradasPorPeriodo() {
+            return transacoes.filter(t => {
+                const dataTransacao = new Date(t.data + "T12:00:00"); 
+                const mes = dataTransacao.getMonth() + 1;
+                const ano = dataTransacao.getFullYear();
+                
+                return mes === mesAtual && ano === anoAtual;
+            });
+        }
+        
+        function calcularResumoCategorias(transacoesParaResumo) {
+            const resumo = {};
+
+            transacoesParaResumo.forEach(t => {
+                if (t.tipo === 'despesa') {
+                    const cat = t.categoria;
+                    resumo[cat] = (resumo[cat] || 0) + Math.abs(t.valor);
+                }
+            });
+
+            return resumo;
+        }
+        
+        function calcularTotaisMensais(transacoesParaCalculo) {
+            let receitaTotal = 0;
+            let despesaTotal = 0;
+            
+            transacoesParaCalculo.forEach(t => {
+                if (t.tipo === 'receita') {
+                    receitaTotal += t.valor;
+                } else {
+                    despesaTotal += Math.abs(t.valor);
+                }
+            });
+            
+            return { receitaTotal, despesaTotal, labels: [MESES_NOMES[mesAtual - 1]] };
+        }
+
+        // --- RENDERIZAÇÃO DE GRÁFICOS E RESUMO ---
+
+        function atualizarResumoCategorias(resumo) {
+            const listaResumoElement = document.getElementById('lista-resumo-categorias');
+            listaResumoElement.innerHTML = ''; 
+
+            const categoriasOrdenadas = Object.keys(resumo).sort((a, b) => resumo[b] - resumo[a]);
+
+            if (categoriasOrdenadas.length === 0) {
+                listaResumoElement.innerHTML = '<li>Nenhuma despesa no período.</li>';
+                return;
+            }
+
+            categoriasOrdenadas.forEach(categoria => {
+                const totalGasto = resumo[categoria];
+                const listItem = document.createElement('li');
+                const nomeCategoria = categoriasExibicao[categoria.toLowerCase()] || categoria.charAt(0).toUpperCase() + categoria.slice(1);
+                const valorFormatado = totalGasto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 });
+
+                listItem.innerHTML = `
+                    <span>${nomeCategoria}</span>
+                    <span class="valor-resumo">${valorFormatado}</span>
+                `;
+                listaResumoElement.appendChild(listItem);
+            });
+        }
+
+        function renderizarGraficoPizza(resumo) {
+            const ctx = document.getElementById('graficoDespesasPizza');
+            const semDadosElement = document.getElementById('sem-dados-pizza');
+            
+            const labels = Object.keys(resumo);
+            const data = Object.values(resumo);
+
+            if (labels.length === 0) {
+                semDadosElement.style.display = 'block';
+                if (graficoPizza) graficoPizza.destroy();
+                return;
+            }
+            semDadosElement.style.display = 'none';
+            
+            const backgroundColors = labels.map(label => CORES_CATEGORIAS[label] || '#6c757d');
+            
+            if (graficoPizza) {
+                graficoPizza.destroy();
+            }
+
+            graficoPizza = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels.map(l => categoriasExibicao[l.toLowerCase()] || l.charAt(0).toUpperCase() + l.slice(1)),
+                    datasets: [{
+                        data: data,
+                        backgroundColor: backgroundColors,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                }
+            });
+        }
+        
+        function renderizarGraficoBarras(dados) {
+            const ctx = document.getElementById('graficoDespesasBarras');
+            const semDadosElement = document.getElementById('sem-dados-barras');
+
+            if (dados.receitaTotal === 0 && dados.despesaTotal === 0) {
+                semDadosElement.style.display = 'block';
+                if (graficoBarras) graficoBarras.destroy();
+                return;
+            }
+            semDadosElement.style.display = 'none';
+
+            if (graficoBarras) {
+                graficoBarras.destroy();
+            }
+
+            graficoBarras = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [MESES_NOMES[mesAtual - 1] + '/' + anoAtual],
+                    datasets: [
+                        {
+                            label: 'Receitas',
+                            data: [dados.receitaTotal],
+                            backgroundColor: CORES_CATEGORIAS.receita, 
+                        },
+                        {
+                            label: 'Despesas',
+                            data: [dados.despesaTotal],
+                            backgroundColor: CORES_CATEGORIAS.despesa, 
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        // --- FUNÇÃO PRINCIPAL ---
+
+        function atualizarInterface() {
+            const transacoesPeriodo = getTransacoesFiltradasPorPeriodo();
+            const saldoElement = document.getElementById('saldo');
+            const balancoElement = document.getElementById('balanco-mensal');
+            const mesBalancoLabel = document.getElementById('mes-balanco-label');
+            const listaTransacoesElement = document.getElementById('lista-transacoes');
+            const semTransacoesElement = document.getElementById('sem-transacoes');
+            
+            // 1. Calcular Saldo Geral (DE TODAS AS TRANSAÇÕES, ACUMULADO)
+            const saldoTotalGeral = transacoes.reduce((acc, transacao) => acc + transacao.valor, 0);
+            
+            saldoElement.textContent = saldoTotalGeral.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            
+            // Mudar cor do Saldo Geral
+            saldoElement.classList.remove('saldo-positivo', 'saldo-negativo');
+            if (saldoTotalGeral >= 0) {
+                saldoElement.classList.add('saldo-positivo');
+            } else {
+                saldoElement.classList.add('saldo-negativo');
+            }
+            
+            // 2. Balanço Mensal (Baseado APENAS NO PERÍODO)
+            const totaisPeriodo = calcularTotaisMensais(transacoesPeriodo);
+            const balancoMensal = totaisPeriodo.receitaTotal - totaisPeriodo.despesaTotal;
+            
+            mesBalancoLabel.textContent = MESES_NOMES[mesAtual - 1] + '/' + anoAtual;
+            balancoElement.textContent = balancoMensal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            
+            // Mudar cor do Balanço Mensal
+            balancoElement.classList.remove('saldo-positivo', 'saldo-negativo');
+            if (balancoMensal >= 0) {
+                balancoElement.classList.add('saldo-positivo');
+            } else {
+                balancoElement.classList.add('saldo-negativo');
+            }
+            
+            // 3. Aplicar Filtro e Listar Transações
+            // Ordena da mais recente para a mais antiga
+            let transacoesListadas = transacoesPeriodo.slice().sort((a, b) => new Date(b.data + "T12:00:00") - new Date(a.data + "T12:00:00"));
+            
+            if (filtroAtual !== 'todos') {
+                transacoesListadas = transacoesListadas.filter(t => t.tipo === filtroAtual);
+            }
+
+            listaTransacoesElement.innerHTML = '';
+            if (transacoesListadas.length === 0) {
+                semTransacoesElement.style.display = 'block';
+            } else {
+                semTransacoesElement.style.display = 'none';
+            }
+
+            transacoesListadas.forEach(transacao => {
+                const listItem = document.createElement('li');
+                const valorClasse = transacao.tipo === 'receita' ? 'valor-receita' : 'valor-despesa';
+                const valorFormatado = Math.abs(transacao.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 });
+                const sinal = transacao.tipo === 'receita' ? '+' : '-';
+                
+                // Usa o mapeamento para nomes em maiúsculas (ex: [MORADIA])
+                const categoriaKey = transacao.tipo === 'receita' ? 'outras' : transacao.categoria; // Usa 'outras' para receitas por padrão
+                const nomeCategoria = `[${categoriasExibicao[categoriaKey.toLowerCase()] || categoriaKey.toUpperCase()}]`;
+
+                const dataFormatada = transacao.data ? transacao.data.split('-').reverse().join('/') : '';
+
+                listItem.innerHTML = `
+                    <div class="transacao-info">
+                        <span class="transacao-data">${dataFormatada}</span>
+                        <span>${nomeCategoria} ${transacao.descricao}</span>
+                    </div>
+                    <div>
+                        <span class="${valorClasse}">${sinal} ${valorFormatado}</span>
+                        <button class="excluir-btn" onclick="excluirTransacao(${transacao.id})">x</button>
+                    </div>
+                `;
+                
+                listaTransacoesElement.appendChild(listItem);
+            });
+            
+            // 4. Renderizar Resumo e Gráficos
+            const resumoDespesas = calcularResumoCategorias(transacoesPeriodo);
+
+            atualizarResumoCategorias(resumoDespesas);
+            renderizarGraficoPizza(resumoDespesas);
+            renderizarGraficoBarras(totaisPeriodo);
+
+            popularFiltrosMesAno(); 
+        }
+
+        // --- IMPORTAÇÃO / EXPORTAÇÃO DE DADOS ---
+
+        function exportarDados() {
+            if (transacoes.length === 0) {
+                alert("Não há dados para exportar. Adicione transações primeiro.");
+                return;
+            }
+            const dados = JSON.stringify(transacoes, null, 2);
+            const blob = new Blob([dados], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `backup_financeiro_${anoAtual}_${mesAtual}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            alert('Dados exportados com sucesso! Guarde o arquivo em um local seguro. Ele contém TODO o seu histórico financeiro.');
+        }
+
+        function importarDados(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!confirm("AVISO: Isso SOBRESCREVERÁ e apagará permanentemente todos os seus dados atuais. Você perderá as transações que não foram salvas neste arquivo. Deseja continuar?")) {
+                event.target.value = null; 
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const dadosImportados = JSON.parse(e.target.result);
+                    if (Array.isArray(dadosImportados)) {
+                        transacoes = dadosImportados;
+                        salvarTransacoes();
+                        
+                        // Redefine os filtros para o período atual após a importação
+                        mesAtual = new Date().getMonth() + 1;
+                        anoAtual = new Date().getFullYear();
+                        
+                        popularFiltrosMesAno();
+                        atualizarInterface();
+                        alert('Dados importados e salvos com sucesso!');
+                    } else {
+                        throw new Error("Formato de arquivo inválido.");
+                    }
+                } catch (error) {
+                    console.error('Erro ao importar dados:', error);
+                    alert('Erro ao importar o arquivo. Verifique se o arquivo JSON está correto.');
+                }
+                event.target.value = null; 
+            };
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
